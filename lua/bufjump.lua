@@ -1,5 +1,9 @@
 local on_success = nil
 
+local skip_location = function(bufloc)
+  return false
+end
+
 local jumpbackward = function(num)
   vim.cmd([[execute "normal! ]] .. tostring(num) .. [[\<c-o>"]])
 end
@@ -25,6 +29,12 @@ local backward = function()
     j = j - 1
     targetBufNum = jumplist[j].bufnr
   end
+
+  while j > 1 and skip_location(jumplist[j]) do
+    j = j - 1
+    targetBufNum = jumplist[j].bufnr
+  end
+
   if targetBufNum ~= curBufNum and vim.api.nvim_buf_is_valid(targetBufNum) then
     jumpbackward(i - j)
     if on_success then
@@ -77,6 +87,12 @@ local forward = function()
     j = j + 1
     targetBufNum = jumplist[j].bufnr
   end
+
+  while j <= #jumplist and skip_location(jumplist[j]) do
+    j = j + 1
+    targetBufNum = jumplist[j].bufnr
+  end
+
   while j + 1 <= #jumplist and jumplist[j + 1].bufnr == targetBufNum and vim.api.nvim_buf_is_valid(targetBufNum) do
     j = j + 1
   end
@@ -132,6 +148,9 @@ local setup = function(cfg)
   end
   if cfg.backward_same_buf_key then
     vim.keymap.set("n", cfg.backward_same_buf_key, bufjump.backward_same_buf)
+  end
+  if cfg.skip_location then
+    skip_location = cfg.skip_location
   end
 end
 
